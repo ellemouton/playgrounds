@@ -7,15 +7,16 @@ This playground tests what bitcoind sends along its ZMQ in a re-org situation.
 - `regtest.yml` & `regtest.sh`: These are used to spin up and control 2 regtest
   bitcoind nodes (btc1 & btc2). Note that initially, the nodes are _not_
 connected.
-- `client.go`: A go main file which spins up a client that connects to one of
-  the bitcoind nodes. All this does is subscribe to btc1's raw block zmq and
-prints out the block details for any block it gets on the queue.
+- `client.go`: A go main file which spins up a client that connects to one of the bitcoind nodes. The client has two
+  different modes it can be run in: `btcclient` and `zmq`. With `zmq`, it will print out exactly what is returned from a
+  zmq subscription to bitcoind. With `btcclient`, it crealtes a btcwallet `BitcoindConn` and uses that to subscribe to
+  notifications and the prints out the notifications it gets. It always uses the btc1 node.
 
 ## How to setup the test:
 
 1. Ensure docker is running
 2. While in this dir, run `./regtest.sh start` to spin up the 2 bitcoin nodes.
-3. Start the client: `go run ./client`
+3. Start the client: zmq mode: `go run ./client zmq`, or btcclient mode: `go run ./client btcclient`
 
 Ok now you can play around with the following commands to see what the client
 receives. 

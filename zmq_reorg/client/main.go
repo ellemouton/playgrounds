@@ -3,11 +3,15 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcwallet/chain"
 	"github.com/lightninglabs/gozmq"
 	"github.com/lightningnetwork/lnd/signal"
 	"io"
 	"log"
+	"net"
+	"os"
 	"sync"
 	"time"
 )
@@ -36,6 +40,16 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	subscription := "btcclient"
+	if len(os.Args) > 1 {
+		subscription = os.Args[1]
+	}
+
+	if subscription != "btcclient" && subscription != "zmq" {
+		log.Fatalln("Must choose between `btcclient` or `zmq`. " +
+			"Ex: start program with `go run ./client zmq`")
+	}
+
 	zmqBlockConn, err := gozmq.Subscribe(
 		"localhost:28332", []string{rawBlockZMQCommand}, time.Second*5,
 	)
@@ -48,12 +62,23 @@ func main() {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := doThings(zmqBlockConn, quit); err != nil {
-			fmt.Println(err)
-		}
-	}()
+	switch subscription {
+	case "btcclient":
+		go func() {
+			defer wg.Done()
+			if err := btcClientNtfns(quit); err != nil {
+				fmt.Println("cant do things", err)
+			}
+		}()
+
+	case "zmq":
+		go func() {
+			defer wg.Done()
+			if err := zmqOutput(zmqBlockConn, quit); err != nil {
+				fmt.Println(err)
+			}
+		}()
+	}
 
 	<-interceptor.ShutdownChannel()
 	fmt.Println("Received shutdown signal")
@@ -64,8 +89,7 @@ func main() {
 	wg.Wait()
 }
 
-func doThings(conn *gozmq.Conn, quit chan struct{}) error {
-
+func zmqOutput(conn *gozmq.Conn, quit chan struct{}) error {
 	var (
 		command [len(rawBlockZMQCommand)]byte
 		seqNum  [seqNumLen]byte
@@ -122,4 +146,62 @@ func doThings(conn *gozmq.Conn, quit chan struct{}) error {
 	}
 
 	return nil
+}
+
+func btcClientNtfns(quit chan struct{}) error {
+	btc, err := chain.NewBitcoindConn(&chain.BitcoindConfig{
+		ChainParams:     &chaincfg.RegressionNetParams,
+		Host:            "localhost:18443",
+		User:            "lightning",
+		Pass:            "lightning",
+		ZMQBlockHost:    "localhost:28332",
+		ZMQTxHost:       "localhost:28333",
+		ZMQReadDeadline: time.Second * 5,
+		Dialer: func(addr string) (net.Conn, error) {
+			return net.DialTimeout("tcp", addr, time.Second*5)
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := btc.Start(); err != nil {
+		return err
+	}
+	defer btc.Stop()
+
+	client := btc.NewBitcoindClient()
+	if err := client.Start(); err != nil {
+		return err
+	}
+	defer client.Stop()
+
+	if err := client.NotifyBlocks(); err != nil {
+		return err
+	}
+
+	ntfns := client.Notifications()
+
+	for {
+		select {
+		case thing := <-ntfns:
+			switch thing.(type) {
+			case chain.BlockConnected:
+				block := thing.(chain.BlockConnected)
+				fmt.Printf("Block Connected: height: %d, "+
+					"hash: %s\n", block.Height, block.Hash)
+
+			case chain.BlockDisconnected:
+				block := thing.(chain.BlockDisconnected)
+				fmt.Printf("Block Disconnected: height: %d, "+
+					"hash: %s\n", block.Height, block.Hash)
+
+			default:
+				fmt.Printf("Got notification of type: %T\n",
+					thing)
+			}
+		case <-quit:
+			return nil
+		}
+	}
 }
