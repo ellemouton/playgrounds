@@ -1,0 +1,52 @@
+version: '3'
+services:
+  btc1:
+    image: ruimarinho/bitcoin-core:0.21
+    restart: unless-stopped
+    ports:
+      - 18443:18443
+      - 18444:18444
+      - 28332:28332
+      - 28333:28333
+    networks:
+      - regtest
+    command:
+      - "-listen"
+      - "-txindex"
+      - "-regtest"
+      - "-rest"
+      - "-printtoconsole"
+      - "-zmqpubrawblock=tcp://0.0.0.0:28332"
+      - "-zmqpubrawtx=tcp://0.0.0.0:28333"
+      - "-rpcport=18443"
+      - "-rpcbind=0.0.0.0"
+      - "-rpcuser=lightning"
+      - "-rpcpassword=lightning"
+      - "-rpcallowip=172.0.0.0/8"
+      - "-blockfilterindex=1"
+      - "-peerblockfilters=1"
+
+  btc2:
+    image: ruimarinho/bitcoin-core:0.21
+    restart: unless-stopped
+    ports:
+      - 18445:18443
+      - 18446:18444
+    networks:
+      - regtest
+    command:
+      - "-listen"
+      - "-txindex"
+      - "-regtest"
+      - "-rest"
+      - "-printtoconsole"
+      - "-rpcport=18443"
+      - "-rpcbind=0.0.0.0"
+      - "-rpcuser=lightning"
+      - "-rpcpassword=lightning"
+      - "-rpcallowip=172.0.0.0/8"
+      - "-blockfilterindex=1"
+      - "-peerblockfilters=1"
+
+networks:
+  regtest:
