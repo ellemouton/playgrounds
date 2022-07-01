@@ -38,6 +38,7 @@ require (
 	github.com/decred/dcrd/lru v1.0.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
+	github.com/gin-gonic/gin v1.7.0 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
