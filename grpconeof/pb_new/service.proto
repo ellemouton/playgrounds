@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package pb_old;
+
+option go_package = "github.com/ellemouton/playgrounds/grpconeof/pb_new";
+
+service Calendar {
+  rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
+}
+
+message ListItemsRequest { bool new = 1; }
+
+message ListItemsResponse {
+  oneof messages {
+    OldMessage old_msg = 1;
+    NewMessage new_msg = 2;
+  }
+}
+
+message OldMessage { string msg = 1; }
+
+message NewMessage {
+  string msg = 1;
+  int64 count = 2;
+}
