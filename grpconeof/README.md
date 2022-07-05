@@ -22,6 +22,11 @@ that new message to the client).
    // See how the client interprets a `oneof` message that
    // it does not yet know about.
    $ go run ./cmd/client new
+   
+   // Or to see how it response to a map with a string key 
+   // and a value that has the `oneof` type.
+   $ go run ./cmd/client oldmap
+   $ go run ./cmd/client newmap
    ```
    
 ## Conclusion:

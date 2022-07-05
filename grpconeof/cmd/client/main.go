@@ -31,6 +31,14 @@ func main() {
 			Name:   "new",
 			Action: newOrOld(true),
 		},
+		{
+			Name:   "oldmap",
+			Action: newOrOldMap(false),
+		},
+		{
+			Name:   "newmap",
+			Action: newOrOldMap(true),
+		},
 	}
 	if err := app.Run(os.Args); err != nil {
 		log.Fatalln(err)
@@ -65,6 +73,44 @@ func newOrOld(new bool) func(ctx *cli.Context) error {
 		}
 		return nil
 	}
+}
+
+func newOrOldMap(new bool) func(ctx *cli.Context) error {
+	return func(ctx *cli.Context) error {
+		client, close, err := getClient(ctx)
+		if err != nil {
+			return err
+		}
+		defer close()
+
+		resp, err := client.TestMap(
+			context.Background(), &pb.TestMapRequest{
+				New: new,
+			},
+		)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		fmt.Println("no error!")
+		fmt.Printf("resp: %+v\n", resp)
+
+		fmt.Printf("Things map: %v\n", resp.Things)
+
+		for k, v := range resp.Things {
+			fmt.Println("Key: ", k)
+
+			switch v.Messages.(type) {
+			case *pb.Thing_OldMsg:
+				fmt.Println("type is `OldMsg`")
+			default:
+				fmt.Println("unknown type!")
+			}
+		}
+
+		return nil
+	}
+	return nil
 }
 
 func getClient(ctx *cli.Context) (pb.CalendarClient, func(), error) {

@@ -6,11 +6,23 @@ option go_package = "github.com/ellemouton/playgrounds/grpconeof/pb_new";
 
 service Calendar {
   rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
+  rpc TestMap(TestMapRequest) returns (TestMapResponse);
 }
 
 message ListItemsRequest { bool new = 1; }
 
 message ListItemsResponse {
+  oneof messages {
+    OldMessage old_msg = 1;
+    NewMessage new_msg = 2;
+  }
+}
+
+message TestMapRequest { bool new = 1; }
+
+message TestMapResponse { map<string, Thing> things = 1; }
+
+message Thing {
   oneof messages {
     OldMessage old_msg = 1;
     NewMessage new_msg = 2;

@@ -37,3 +37,41 @@ func (*Server) ListItems(_ context.Context, req *pb.ListItemsRequest) (
 		},
 	}, nil
 }
+
+func (*Server) TestMap(_ context.Context, req *pb.TestMapRequest) (
+	*pb.TestMapResponse, error) {
+
+	if req.New {
+		return &pb.TestMapResponse{
+			Things: map[string]*pb.Thing{
+				"new thing!": {
+					Messages: &pb.Thing_NewMsg{
+						NewMsg: &pb.NewMessage{
+							Msg:   "new message!",
+							Count: 5,
+						},
+					},
+				},
+				"old thing": {
+					Messages: &pb.Thing_OldMsg{
+						OldMsg: &pb.OldMessage{
+							Msg: "old message",
+						},
+					},
+				},
+			},
+		}, nil
+	}
+
+	return &pb.TestMapResponse{
+		Things: map[string]*pb.Thing{
+			"old thing": {
+				Messages: &pb.Thing_OldMsg{
+					OldMsg: &pb.OldMessage{
+						Msg: "old message",
+					},
+				},
+			},
+		},
+	}, nil
+}
